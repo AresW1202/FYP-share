@@ -10,12 +10,37 @@ from scipy.stats import norm
 ticker = 'TSM'
 targetdata = pd.DataFrame()
 targetdata[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2009-1-1', end = '2019-12-28')['Adj Close']
+targetdata_MA = pd.DataFrame()
+targetdata_MA[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2019-1-1', end = '2020-12-28')['Adj Close']
 #Plot
 targetmean=np.mean(targetdata)
 tragetstd=np.std(targetdata)
 targetdata.plot(figsize=(15,6))
 plt.title("Stock Price from 2009-1-1 to 2019-12-28 ")
 plt.ylabel("Price")
+plt.show()
+
+#Plot for 2020 MA and Bollinger Bands
+start_date = '2020-01-01'
+end_date = '2020-12-28'
+
+short_rolling = targetdata_MA.rolling(window=20).mean()
+long_rolling = targetdata_MA.rolling(window=100).mean()
+
+targetdata_std = targetdata_MA.rolling(window = 20).std()
+upper_bb = short_rolling + targetdata_std * 2
+lower_bb = short_rolling - targetdata_std * 2
+
+
+fig, ax = plt.subplots(figsize=(16,9))
+ax.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
+ax.plot(long_rolling.loc[start_date:end_date, :], label = '100-days SMA')
+ax.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
+ax.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper Bollinger Bands',linestyle='dashed')
+ax.plot(lower_bb.loc[start_date:end_date, :], label = 'Lower Bollinger Bands',linestyle='dashed')
+ax.legend(loc='best')
+ax.title.set_text('MA and Bollinger Bands in 2020')
+ax.set_ylabel('Price in $')
 plt.show()
 
 #Compute the logarithmic returns
@@ -82,6 +107,5 @@ plt.title("Stock Price Forecast in 2020 ")
 plt.ylabel("Probability")
 plt.xlabel("Price in 252 days")
 plt.show()
-
 
 
