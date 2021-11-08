@@ -12,7 +12,8 @@ targetdata = pd.DataFrame()
 targetdata[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2009-1-1', end = '2019-12-28')['Adj Close']
 targetdata_MA = pd.DataFrame()
 targetdata_MA[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2019-1-1', end = '2020-12-28')['Adj Close']
-#Plot
+
+#Plot stock price 
 targetmean=np.mean(targetdata)
 tragetstd=np.std(targetdata)
 targetdata.plot(figsize=(15,6))
@@ -43,28 +44,59 @@ ax.title.set_text('MA and Bollinger Bands in 2020')
 ax.set_ylabel('Price in $')
 plt.show()
 
-#Compute the logarithmic returns
+#Compute and Plot 2020 MA Stretegry
+trading_positions_raw = targetdata_MA - short_rolling
+trading_positions = trading_positions_raw.apply(np.sign)
+trading_positions_final = trading_positions.shift(1)
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
+ax1.title.set_text('Trading Timing in 2020')
+ax1.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
+ax1.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
+ax1.set_ylabel('Stock Price')
+ax1.legend(loc='best')
+ax2.plot(trading_positions_final.loc[start_date:end_date, :], label='Trading position')
+ax2.set_ylabel('Trading position')
+plt.show()
+
+#Compute and Plot log return of 2020 MA strategy
+asset_log_returns = np.log(targetdata_MA).diff()
+strategy_asset_log_returns = trading_positions_final * asset_log_returns
+cum_strategy_asset_log_returns = strategy_asset_log_returns.cumsum()
+
+buy_and_hold=pd.DataFrame(1, index = targetdata_MA.index, columns=targetdata_MA.columns)
+buy_and_hold_log_returns=buy_and_hold * asset_log_returns
+cum_buy_and_hold_log_returns = buy_and_hold_log_returns.cumsum()
+
+fig,(ax1) = plt.subplots(figsize=(16,9))
+ax1.plot(cum_strategy_asset_log_returns.loc[start_date:end_date, :], label='EMA strategy')
+ax1.plot(cum_buy_and_hold_log_returns.loc[start_date:end_date, :], label='Buy and hold')
+ax1.title.set_text('Cumulative log-returns using 20MA in 2020')
+ax1.set_ylabel('Cumulative log-returns ')
+ax1.legend(loc='best')
+plt.show()
+
+#Compute the stock logarithmic returns (MCS)
 log_returns = np.log(1 + targetdata.pct_change())
-#Plot
+#Plot  (MCS)
 sns.distplot(log_returns.iloc[1:])
 plt.title("Frequency of Daily Return from 2009-1-1 to 2019-12-28 ")
 plt.xlabel("Daily Return")
 plt.ylabel("Frequency")
 plt.show()
 
-#Compute the Drift
+#Compute the Drift (MCS)
 u = log_returns.mean()
 var = log_returns.var()
 drift = u - (0.5*var)
 
-#Compute the Variance and Daily Returns
+#Compute the Variance and Daily Returns (MCS)
 stdev = log_returns.std()
 days = 252
 trials = 1000
 Z = norm.ppf(np.random.rand(days, trials)) #days, trials
 daily_returns = np.exp(drift.values + stdev.values * Z)
 
-#Calculating the stock price for every trial
+#Calculating the stock price for every trial (MCS)
 price_paths = np.zeros_like(daily_returns)
 price_paths[0] = targetdata.iloc[-1]
 for t in range(1, days):
@@ -76,7 +108,7 @@ plt.xlabel("Day")
 plt.ylabel("Price")
 plt.show()
 
-#Calculating the paths stat
+#Calculating the paths stat (MCS)
 pathsmean=np.mean(price_paths)
 pathsstd=np.std(price_paths)
 data=[[np.float(pathsmean),np.float(pathsstd)]]
@@ -86,7 +118,7 @@ plt.axis('off')
 plt.table(cellText=data,colLabels=column_labels,loc='center')
 plt.show()
 
-#period static
+#period static 
 period_stat=[]
 for p in range(1,days):
     period_stat=price_paths[p]
@@ -101,7 +133,7 @@ plt.table(cellText=data,colLabels=column_labels,loc='center')
 plt.show()
 
 
-#Histogram 
+#Histogram (MCS)
 sns.distplot(pd.DataFrame(price_paths).iloc[-1])
 plt.title("Stock Price Forecast in 2020 ")
 plt.ylabel("Probability")
