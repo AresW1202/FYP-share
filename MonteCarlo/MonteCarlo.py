@@ -59,20 +59,38 @@ ax2.set_ylabel('Trading position')
 plt.show()
 
 #Compute and Plot log return of 2020 MA strategy
+number_of_years=1
 asset_log_returns = np.log(targetdata_MA).diff()
 strategy_asset_log_returns = trading_positions_final * asset_log_returns
 cum_strategy_asset_log_returns = strategy_asset_log_returns.cumsum()
+last_value_cum_strategy_asset_log_returns=strategy_asset_log_returns.sum()
+MA_average_yearly_return = (1 + last_value_cum_strategy_asset_log_returns)**(1/number_of_years) - 1
+print(MA_average_yearly_return)
 
 buy_and_hold=pd.DataFrame(1, index = targetdata_MA.index, columns=targetdata_MA.columns)
 buy_and_hold_log_returns=buy_and_hold * asset_log_returns
 cum_buy_and_hold_log_returns = buy_and_hold_log_returns.cumsum()
+last_value_cum_buy_and_hold_log_returnss=buy_and_hold_log_returns.sum()
+buy_and_hold_average_yearly_return = (1 + last_value_cum_buy_and_hold_log_returnss)**(1/number_of_years) - 1
+print(buy_and_hold_average_yearly_return)
 
-fig,(ax1) = plt.subplots(figsize=(16,9))
+fig = plt.figure(figsize=(16,9))
+ax1 = plt.subplot2grid(shape=(16, 9), loc=(0, 0), rowspan=9,colspan=16)
 ax1.plot(cum_strategy_asset_log_returns.loc[start_date:end_date, :], label='EMA strategy')
 ax1.plot(cum_buy_and_hold_log_returns.loc[start_date:end_date, :], label='Buy and hold')
 ax1.title.set_text('Cumulative log-returns using 20MA in 2020')
 ax1.set_ylabel('Cumulative log-returns ')
 ax1.legend(loc='best')
+
+ax2 = plt.subplot2grid(shape=(8, 5), loc=(6, 0), rowspan=1)
+column_labels=["Yearly Return"]
+row_labels=["20MA","Buy and Hold"]
+ax2.title.set_text('Yearly return of different strategy in 2020 (%)')
+data=[[100*np.float(MA_average_yearly_return.iloc[0])],[100*np.float(buy_and_hold_average_yearly_return.iloc[0])]]
+ax2.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
+ax2.axis('tight')
+ax2.axis('off')
+plt.tight_layout()
 plt.show()
 
 #Compute the stock logarithmic returns (MCS)
@@ -139,5 +157,4 @@ plt.title("Stock Price Forecast in 2020 ")
 plt.ylabel("Probability")
 plt.xlabel("Price in 252 days")
 plt.show()
-
 
