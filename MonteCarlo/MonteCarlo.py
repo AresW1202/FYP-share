@@ -16,10 +16,12 @@ targetdata_MA[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '20
 #Plot stock price 
 targetmean=np.mean(targetdata)
 tragetstd=np.std(targetdata)
+"""
 targetdata.plot(figsize=(15,6))
 plt.title("Stock Price from 2009-1-1 to 2019-12-28 ")
 plt.ylabel("Price")
 plt.show()
+"""
 
 #Plot for 2020 MA and Bollinger Bands
 start_date = '2020-01-01'
@@ -32,7 +34,7 @@ targetdata_std = targetdata_MA.rolling(window = 20).std()
 upper_bb = short_rolling + targetdata_std * 2
 lower_bb = short_rolling - targetdata_std * 2
 
-
+"""
 fig, ax = plt.subplots(figsize=(16,9))
 ax.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
 ax.plot(long_rolling.loc[start_date:end_date, :], label = '100-days SMA')
@@ -43,11 +45,14 @@ ax.legend(loc='best')
 ax.title.set_text('MA and Bollinger Bands in 2020')
 ax.set_ylabel('Price in $')
 plt.show()
+"""
 
 #Compute and Plot 2020 MA Stretegry
 trading_positions_raw = targetdata_MA - short_rolling
 trading_positions = trading_positions_raw.apply(np.sign)
 trading_positions_final = trading_positions.shift(1)
+
+"""
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
 ax1.title.set_text('Trading Timing in 2020')
 ax1.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
@@ -57,6 +62,7 @@ ax1.legend(loc='best')
 ax2.plot(trading_positions_final.loc[start_date:end_date, :], label='Trading position')
 ax2.set_ylabel('Trading position')
 plt.show()
+"""
 
 #Compute and Plot log return of 2020 MA strategy
 number_of_years=1
@@ -65,18 +71,17 @@ strategy_asset_log_returns = trading_positions_final * asset_log_returns
 cum_strategy_asset_log_returns = strategy_asset_log_returns.cumsum()
 last_value_cum_strategy_asset_log_returns=strategy_asset_log_returns.sum()
 MA_average_yearly_return = (1 + last_value_cum_strategy_asset_log_returns)**(1/number_of_years) - 1
-print(MA_average_yearly_return)
 
 buy_and_hold=pd.DataFrame(1, index = targetdata_MA.index, columns=targetdata_MA.columns)
 buy_and_hold_log_returns=buy_and_hold * asset_log_returns
 cum_buy_and_hold_log_returns = buy_and_hold_log_returns.cumsum()
 last_value_cum_buy_and_hold_log_returnss=buy_and_hold_log_returns.sum()
 buy_and_hold_average_yearly_return = (1 + last_value_cum_buy_and_hold_log_returnss)**(1/number_of_years) - 1
-print(buy_and_hold_average_yearly_return)
 
+"""
 fig = plt.figure(figsize=(16,9))
 ax1 = plt.subplot2grid(shape=(16, 9), loc=(0, 0), rowspan=9,colspan=16)
-ax1.plot(cum_strategy_asset_log_returns.loc[start_date:end_date, :], label='EMA strategy')
+ax1.plot(cum_strategy_asset_log_returns.loc[start_date:end_date, :], label='MA strategy')
 ax1.plot(cum_buy_and_hold_log_returns.loc[start_date:end_date, :], label='Buy and hold')
 ax1.title.set_text('Cumulative log-returns using 20MA in 2020')
 ax1.set_ylabel('Cumulative log-returns ')
@@ -92,15 +97,18 @@ ax2.axis('tight')
 ax2.axis('off')
 plt.tight_layout()
 plt.show()
+"""
 
 #Compute the stock logarithmic returns (MCS)
 log_returns = np.log(1 + targetdata.pct_change())
 #Plot  (MCS)
+"""
 sns.distplot(log_returns.iloc[1:])
 plt.title("Frequency of Daily Return from 2009-1-1 to 2019-12-28 ")
 plt.xlabel("Daily Return")
 plt.ylabel("Frequency")
 plt.show()
+"""
 
 #Compute the Drift (MCS)
 u = log_returns.mean()
@@ -119,12 +127,95 @@ price_paths = np.zeros_like(daily_returns)
 price_paths[0] = targetdata.iloc[-1]
 for t in range(1, days):
     price_paths[t] = price_paths[t-1]*daily_returns[t]
+
+"""
 plt.figure(figsize=(15,6))
 plt.plot(pd.DataFrame(price_paths).iloc[:,0:1000])
 plt.title("Stock Price Forecast in 2020 ")
 plt.xlabel("Day")
 plt.ylabel("Price")
 plt.show()
+"""
+
+#Plot for 2020 MA and Bollinger Bands (MCS)
+targetdata_MA_storage_MCS =[]
+for i in range(10000):
+    for j in range(252):
+        targetdata_MA_storage_MCS.append(price_paths[j][i])
+    targetdata_MA_MCS=pd.DataFrame(targetdata_MA_storage_MCS)
+    print(targetdata_MA_MCS)
+    short_rolling_MCS = targetdata_MA_MCS.rolling(window=20).mean()
+    long_rolling_MCS = targetdata_MA_MCS.rolling(window=100).mean()
+
+    targetdata_std_MCS = targetdata_MA_MCS.rolling(window = 20).std()
+    upper_bb_MCS = short_rolling_MCS + targetdata_std_MCS * 2
+    lower_bb_MCS = short_rolling_MCS - targetdata_std_MCS * 2
+
+    
+    fig, ax = plt.subplots(figsize=(16,9))
+    ax.plot(targetdata_MA_MCS.iloc[:252], label='Price')
+    ax.plot(long_rolling_MCS.iloc[:252], label = '100-days SMA')
+    ax.plot(short_rolling_MCS.iloc[:252], label = '20-days SMA')
+    ax.plot(upper_bb_MCS.iloc[:252], label = 'Upper Bollinger Bands',linestyle='dashed')
+    ax.plot(lower_bb_MCS.iloc[:252], label = 'Lower Bollinger Bands',linestyle='dashed')
+    ax.legend(loc='best')
+    ax.title.set_text('MA and Bollinger Bands in 2020 using MCS')
+    ax.set_ylabel('Price in $')
+    plt.show()
+    targetdata_MA_storage_MCS.clear()
+    
+
+    #Compute and Plot 2020 MA Stretegry (MCS)
+    trading_frequency=0
+    trading_positions_raw_MCS = targetdata_MA_MCS - short_rolling_MCS 
+    trading_positions_MCS = trading_positions_raw_MCS.apply(np.sign)
+    trading_positions_final_MCS = trading_positions_MCS.shift(1)
+    for i in range (21,252):
+        if (trading_positions_final_MCS[0][i]!=trading_positions_final_MCS[0][i-1]):
+            trading_frequency +=1
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
+    ax1.title.set_text('Trading Timing in 2020 using MCS')
+    ax1.plot(targetdata_MA_MCS.iloc[:252], label='Price')
+    ax1.plot(short_rolling_MCS.loc[:252], label = '20-days SMA')
+    ax1.set_ylabel('Stock Price')
+    ax1.legend(loc='best')
+    ax2.plot(trading_positions_final_MCS.iloc[:252], label='Trading position')
+    ax2.set_ylabel('Trading position')
+    plt.show()
+    print('trading_frequency',trading_frequency+1)
+    
+    #Compute and Plot log return of 2020 MA strategy (MCS)
+    number_of_years=1
+    asset_log_returns_MCS = np.log(targetdata_MA_MCS).diff()
+    strategy_asset_log_returns_MCS = trading_positions_final_MCS * asset_log_returns_MCS
+    cum_strategy_asset_log_returns_MCS = strategy_asset_log_returns_MCS.cumsum()
+    last_value_cum_strategy_asset_log_returns_MCS=strategy_asset_log_returns_MCS.sum()
+    MA_average_yearly_return_MCS = (1 + last_value_cum_strategy_asset_log_returns_MCS)**(1/number_of_years) - 1
+
+    buy_and_hold_MCS=pd.DataFrame(1, index = targetdata_MA_MCS.index, columns=targetdata_MA_MCS.columns)
+    buy_and_hold_log_returns_MCS=buy_and_hold_MCS * asset_log_returns_MCS
+    cum_buy_and_hold_log_returns_MCS = buy_and_hold_log_returns_MCS.cumsum()
+    last_value_cum_buy_and_hold_log_returnss_MCS=buy_and_hold_log_returns_MCS.sum()
+    buy_and_hold_average_yearly_return_MCS = (1 + last_value_cum_buy_and_hold_log_returnss_MCS)**(1/number_of_years) - 1
+
+    fig = plt.figure(figsize=(16,9))
+    ax1 = plt.subplot2grid(shape=(16, 9), loc=(0, 0), rowspan=9,colspan=16)
+    ax1.plot(cum_strategy_asset_log_returns_MCS.iloc[:252], label='MA strategy')
+    ax1.plot(cum_buy_and_hold_log_returns_MCS.iloc[:252], label='Buy and hold')
+    ax1.title.set_text('Cumulative log-returns using 20MA in 2020 using MCS')
+    ax1.set_ylabel('Cumulative log-returns ')
+    ax1.legend(loc='best')
+
+    ax2 = plt.subplot2grid(shape=(8, 5), loc=(6, 0), rowspan=1)
+    column_labels=["Yearly Return"]
+    row_labels=["20MA","Buy and Hold"]
+    ax2.title.set_text('Yearly return of different strategy in 2020 (%)')
+    data=[[100*np.float(MA_average_yearly_return_MCS.iloc[0])],[100*np.float(buy_and_hold_average_yearly_return_MCS.iloc[0])]]
+    ax2.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
+    ax2.axis('tight')
+    ax2.axis('off')
+    plt.tight_layout()
+    plt.show()
 
 #Calculating the paths stat (MCS)
 pathsmean=np.mean(price_paths)
@@ -157,4 +248,3 @@ plt.title("Stock Price Forecast in 2020 ")
 plt.ylabel("Probability")
 plt.xlabel("Price in 252 days")
 plt.show()
-
