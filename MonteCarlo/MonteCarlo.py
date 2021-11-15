@@ -6,6 +6,7 @@ import seaborn as sns
 from scipy.stats import norm
 
 
+
 #Import the stock data
 ticker = 'TSM'
 targetdata = pd.DataFrame()
@@ -99,6 +100,63 @@ plt.tight_layout()
 plt.show()
 """
 
+#Compute Bollinger Band Stretegrylower_bb
+BB_strategy_realdata_storage=[]
+lower_bb_storage=[]
+upper_bb_storage=[]
+for i in range(503):
+    BB_strategy_realdata_storage.append(targetdata_MA.iloc[i][0])
+    lower_bb_storage.append(lower_bb.iloc[i][0])
+    upper_bb_storage.append(upper_bb.iloc[i][0])
+
+buy_price = []
+sell_price = []
+bb_signal = []
+signal = 0   
+for i in range(22,503):
+    if BB_strategy_realdata_storage[i-1] > lower_bb_storage[i-1] and BB_strategy_realdata_storage[i] < lower_bb_storage[i]:
+        if signal != 1:
+            buy_price.append(BB_strategy_realdata_storage[i])
+            sell_price.append(np.nan)
+            signal = 1
+            bb_signal.append(signal)
+        else:
+            buy_price.append(np.nan)
+            sell_price.append(np.nan)
+            bb_signal.append(0)
+    elif BB_strategy_realdata_storage[i-1] < upper_bb_storage[i-1] and BB_strategy_realdata_storage[i] > upper_bb_storage[i]:
+        if signal != -1:
+            buy_price.append(np.nan)
+            sell_price.append(BB_strategy_realdata_storage[i])
+            signal = -1
+            bb_signal.append(signal)
+        else:
+            buy_price.append(np.nan)
+            sell_price.append(np.nan)
+            bb_signal.append(0)
+    else:
+        buy_price.append(np.nan)
+        sell_price.append(np.nan)
+        bb_signal.append(0)
+
+start_date = '2020-01-01'
+end_date = '2020-12-28'
+print(pd.to_datetime(upper_bb.loc[start_date:end_date, :])>='2020-01-01')
+fig, ax = plt.subplots(figsize=(16,9))
+ax.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
+ax.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
+ax.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper Bollinger Bands',linestyle='dashed')
+ax.plot(lower_bb.loc[start_date:end_date, :], label = 'Lower Bollinger Bands',linestyle='dashed')
+ax.scatter(upper_bb.loc[start_date:end_date], buy_price, marker = '^', color = 'green', label = 'Buy', s = 200)
+ax.scatter(lower_bb.loc[start_date:end_date], sell_price, marker = 'v', color = 'red', label = 'Sell', s = 200)
+ax.legend(loc='best')
+ax.title.set_text('MA and Bollinger Bands in 2020')
+ax.set_ylabel('Price in $')
+plt.show()
+
+
+
+
 #Compute the stock logarithmic returns (MCS)
 log_returns = np.log(1 + targetdata.pct_change())
 #Plot  (MCS)
@@ -143,7 +201,6 @@ for i in range(10000):
     for j in range(252):
         targetdata_MA_storage_MCS.append(price_paths[j][i])
     targetdata_MA_MCS=pd.DataFrame(targetdata_MA_storage_MCS)
-    print(targetdata_MA_MCS)
     short_rolling_MCS = targetdata_MA_MCS.rolling(window=20).mean()
     long_rolling_MCS = targetdata_MA_MCS.rolling(window=100).mean()
 
@@ -182,7 +239,6 @@ for i in range(10000):
     ax2.plot(trading_positions_final_MCS.iloc[:252], label='Trading position')
     ax2.set_ylabel('Trading position')
     plt.show()
-    print('trading_frequency',trading_frequency+1)
     
     #Compute and Plot log return of 2020 MA strategy (MCS)
     number_of_years=1
