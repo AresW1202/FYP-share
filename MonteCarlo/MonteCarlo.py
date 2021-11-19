@@ -12,7 +12,7 @@ ticker = 'TSM'
 targetdata = pd.DataFrame()
 targetdata[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2009-1-1', end = '2019-12-28')['Adj Close']
 targetdata_MA = pd.DataFrame()
-targetdata_MA[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2019-1-1', end = '2020-12-28')['Adj Close']
+targetdata_MA[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2020-1-1', end = '2020-12-28')['Adj Close']
 
 #Plot stock price 
 targetmean=np.mean(targetdata)
@@ -104,7 +104,7 @@ plt.show()
 BB_strategy_realdata_storage=[]
 lower_bb_storage=[]
 upper_bb_storage=[]
-for i in range(503):
+for i in range(len(targetdata_MA)):
     BB_strategy_realdata_storage.append(targetdata_MA.iloc[i][0])
     lower_bb_storage.append(lower_bb.iloc[i][0])
     upper_bb_storage.append(upper_bb.iloc[i][0])
@@ -113,7 +113,7 @@ buy_price = []
 sell_price = []
 bb_signal = []
 signal = 0   
-for i in range(22,503):
+for i in range(len(targetdata_MA)):
     if BB_strategy_realdata_storage[i-1] > lower_bb_storage[i-1] and BB_strategy_realdata_storage[i] < lower_bb_storage[i]:
         if signal != 1:
             buy_price.append(BB_strategy_realdata_storage[i])
@@ -139,19 +139,25 @@ for i in range(22,503):
         sell_price.append(np.nan)
         bb_signal.append(0)
 
-start_date = '2020-01-01'
-end_date = '2020-12-28'
-print(pd.to_datetime(upper_bb.loc[start_date:end_date, :])>='2020-01-01')
-fig, ax = plt.subplots(figsize=(16,9))
-ax.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
-ax.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
-ax.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper Bollinger Bands',linestyle='dashed')
-ax.plot(lower_bb.loc[start_date:end_date, :], label = 'Lower Bollinger Bands',linestyle='dashed')
-ax.scatter(upper_bb.loc[start_date:end_date], buy_price, marker = '^', color = 'green', label = 'Buy', s = 200)
-ax.scatter(lower_bb.loc[start_date:end_date], sell_price, marker = 'v', color = 'red', label = 'Sell', s = 200)
-ax.legend(loc='best')
-ax.title.set_text('MA and Bollinger Bands in 2020')
-ax.set_ylabel('Price in $')
+
+#Trading Position for BB (MCS)
+position = []
+for i in range(len(targetdata_MA)):
+    if bb_signal[i] > 1:
+        position.append(0)
+    else:
+        position.append(1)
+        
+for i in range(len(targetdata_MA)):
+    if bb_signal[i] == 1:
+        position[i] = 1
+    elif bb_signal[i] == -1:
+        position[i] = 0
+    else:
+        position[i] = position[i-1]
+print(position)
+x=range(1,252) #????????????????????????????????
+plt.plot(x,position)
 plt.show()
 
 
