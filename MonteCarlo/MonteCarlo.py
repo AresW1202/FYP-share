@@ -31,9 +31,9 @@ end_date = '2020-12-28'
 short_rolling = targetdata_MA.rolling(window=20).mean()
 long_rolling = targetdata_MA.rolling(window=100).mean()
 
-targetdata_std = targetdata_MA.rolling(window = 20).std()
-upper_bb = short_rolling + targetdata_std * 2
-lower_bb = short_rolling - targetdata_std * 2
+targetdata_MA_std = targetdata_MA.rolling(window = 20).std()
+upper_bb = short_rolling + targetdata_MA_std * 2
+lower_bb = short_rolling - targetdata_MA_std * 2
 
 """
 fig, ax = plt.subplots(figsize=(16,9))
@@ -52,7 +52,8 @@ plt.show()
 trading_positions_raw = targetdata_MA - short_rolling
 trading_positions = trading_positions_raw.apply(np.sign)
 trading_positions_final = trading_positions.shift(1)
-
+for i in range(20):
+    trading_positions_final.iloc[i][0]=0
 """
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
 ax1.title.set_text('Trading Timing in 2020')
@@ -66,20 +67,23 @@ plt.show()
 """
 
 #Compute and Plot log return of 2020 MA strategy
+risk_free_rate=0.025
 number_of_years=1
 asset_log_returns = np.log(targetdata_MA).diff()
 strategy_asset_log_returns = trading_positions_final * asset_log_returns
 cum_strategy_asset_log_returns = strategy_asset_log_returns.cumsum()
 last_value_cum_strategy_asset_log_returns=strategy_asset_log_returns.sum()
 MA_average_yearly_return = (1 + last_value_cum_strategy_asset_log_returns)**(1/number_of_years) - 1
+sharpe_ratio_MA= (MA_average_yearly_return-risk_free_rate)/cum_strategy_asset_log_returns.std(0)
 
 buy_and_hold=pd.DataFrame(1, index = targetdata_MA.index, columns=targetdata_MA.columns)
 buy_and_hold_log_returns=buy_and_hold * asset_log_returns
 cum_buy_and_hold_log_returns = buy_and_hold_log_returns.cumsum()
 last_value_cum_buy_and_hold_log_returnss=buy_and_hold_log_returns.sum()
 buy_and_hold_average_yearly_return = (1 + last_value_cum_buy_and_hold_log_returnss)**(1/number_of_years) - 1
+sharpe_ratio_buy_and_hold= (buy_and_hold_average_yearly_return-risk_free_rate)/cum_buy_and_hold_log_returns.std(0)
 
-"""
+
 fig = plt.figure(figsize=(16,9))
 ax1 = plt.subplot2grid(shape=(16, 9), loc=(0, 0), rowspan=9,colspan=16)
 ax1.plot(cum_strategy_asset_log_returns.loc[start_date:end_date, :], label='MA strategy')
@@ -96,11 +100,51 @@ data=[[100*np.float(MA_average_yearly_return.iloc[0])],[100*np.float(buy_and_hol
 ax2.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
 ax2.axis('tight')
 ax2.axis('off')
+
+ax3 = plt.subplot2grid(shape=(8, 5), loc=(6, 2), rowspan=1)
+column_labels=["Sharpe Ratio"]
+row_labels=["20MA","Buy and Hold"]
+ax3.title.set_text('Sharpe Ratio of different strategy in 2020')
+data=[[sharpe_ratio_MA.iloc[0]],[sharpe_ratio_buy_and_hold.iloc[0]]]
+ax3.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
+ax3.axis('tight')
+ax3.axis('off')
 plt.tight_layout()
 plt.show()
-"""
 
-#Compute Bollinger Band Stretegrylower_bb
+
+#Compute Bollinger Band Stretegry
+print(targetdata_MA)
+targetdata_BB_price=targetdata_MA
+print(targetdata_BB_price.to_string())
+BB_trading_pos=[]
+for i in range(251):
+    if (targetdata_MA.iloc[i][0] > upper_bb.iloc[i][0]):
+        BB_trading_pos.append(-1)
+    elif (targetdata_MA.iloc[i][0] < upper_bb.iloc[i][0]):
+        BB_trading_pos.append(1)
+    else:
+        BB_trading_pos.append(0)
+targetdata_BB=targetdata_MA
+targetdata_BB['TSM']=BB_trading_pos
+BB_trading_pos_final=targetdata_BB
+
+print(targetdata_BB_price.to_string())
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
+ax1.title.set_text('Trading Timing in 2020')
+ax1.plot(targetdata_BB_price.loc[start_date:end_date, :], label='Price')
+ax1.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
+ax1.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper BB')
+ax1.plot(lower_bb.loc[start_date:end_date, :], label = 'Lower BB')
+ax1.set_ylabel('Stock Price')
+ax1.legend(loc='best')
+ax2.plot(BB_trading_pos_final.loc[start_date:end_date, :], label='Trading position')
+ax2.set_ylabel('Trading position')
+plt.show()
+
+"""
+#Compute Bollinger Band Stretegry
 BB_strategy_realdata_storage=[]
 lower_bb_storage=[]
 upper_bb_storage=[]
@@ -155,11 +199,10 @@ for i in range(len(targetdata_MA)):
         position[i] = 0
     else:
         position[i] = position[i-1]
-print(position)
 x=range(1,252) #????????????????????????????????
 plt.plot(x,position)
 plt.show()
-
+"""
 
 
 
