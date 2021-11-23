@@ -66,7 +66,35 @@ ax2.set_ylabel('Trading position')
 plt.show()
 """
 
-#Compute and Plot log return of 2020 MA strategy
+#Compute Bollinger Band Stretegry
+BB_trading_pos=[]
+
+for i in range(251):
+    if (targetdata_MA.iloc[i][0] > upper_bb.iloc[i][0]):
+        BB_trading_pos.append(-1)
+    elif (targetdata_MA.iloc[i][0] < upper_bb.iloc[i][0]):
+        BB_trading_pos.append(1)
+    else:
+        BB_trading_pos.append(0)
+
+targetdata_BB=targetdata_MA.copy(deep=True)
+targetdata_BB['TSM']=BB_trading_pos
+BB_trading_pos_final=targetdata_BB
+
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
+ax1.title.set_text('Trading Timing in 2020')
+ax1.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
+ax1.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
+ax1.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper BB')
+ax1.plot(lower_bb.loc[start_date:end_date, :], label = 'Lower BB')
+ax1.set_ylabel('Stock Price')
+ax1.legend(loc='best')
+ax2.plot(BB_trading_pos_final.loc[start_date:end_date, :], label='Trading position')
+ax2.set_ylabel('Trading position')
+plt.show()
+
+#Compute and Plot log return of 2020 MA/BB/BNH strategy
 risk_free_rate=0.025
 number_of_years=1
 asset_log_returns = np.log(targetdata_MA).diff()
@@ -83,127 +111,41 @@ last_value_cum_buy_and_hold_log_returnss=buy_and_hold_log_returns.sum()
 buy_and_hold_average_yearly_return = (1 + last_value_cum_buy_and_hold_log_returnss)**(1/number_of_years) - 1
 sharpe_ratio_buy_and_hold= (buy_and_hold_average_yearly_return-risk_free_rate)/cum_buy_and_hold_log_returns.std(0)
 
+BB_log_returns=BB_trading_pos_final* asset_log_returns
+cum_BB_log_returns = BB_log_returns.cumsum()
+last_value_cum_BB_log_returnss=BB_log_returns.sum()
+BB_average_yearly_return = (1 + last_value_cum_BB_log_returnss)**(1/number_of_years) - 1
+sharpe_ratio_BB= (BB_average_yearly_return-risk_free_rate)/cum_BB_log_returns.std(0)
+
 
 fig = plt.figure(figsize=(16,9))
 ax1 = plt.subplot2grid(shape=(16, 9), loc=(0, 0), rowspan=9,colspan=16)
 ax1.plot(cum_strategy_asset_log_returns.loc[start_date:end_date, :], label='MA strategy')
 ax1.plot(cum_buy_and_hold_log_returns.loc[start_date:end_date, :], label='Buy and hold')
-ax1.title.set_text('Cumulative log-returns using 20MA in 2020')
+ax1.plot(cum_BB_log_returns.loc[start_date:end_date, :], label='BB strategy')
+ax1.title.set_text('Cumulative log-returns using 20MA/BB/BNH in 2020')
 ax1.set_ylabel('Cumulative log-returns ')
 ax1.legend(loc='best')
 
 ax2 = plt.subplot2grid(shape=(8, 5), loc=(6, 0), rowspan=1)
 column_labels=["Yearly Return"]
-row_labels=["20MA","Buy and Hold"]
+row_labels=["20MA","BB","Buy and Hold"]
 ax2.title.set_text('Yearly return of different strategy in 2020 (%)')
-data=[[100*np.float(MA_average_yearly_return.iloc[0])],[100*np.float(buy_and_hold_average_yearly_return.iloc[0])]]
+data=[[100*np.float(MA_average_yearly_return.iloc[0])],[100*np.float(BB_average_yearly_return.iloc[0])],[100*np.float(buy_and_hold_average_yearly_return.iloc[0])]]
 ax2.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
 ax2.axis('tight')
 ax2.axis('off')
 
 ax3 = plt.subplot2grid(shape=(8, 5), loc=(6, 2), rowspan=1)
 column_labels=["Sharpe Ratio"]
-row_labels=["20MA","Buy and Hold"]
+row_labels=["20MA","BB","Buy and Hold"]
 ax3.title.set_text('Sharpe Ratio of different strategy in 2020')
-data=[[sharpe_ratio_MA.iloc[0]],[sharpe_ratio_buy_and_hold.iloc[0]]]
+data=[[sharpe_ratio_MA.iloc[0]],[sharpe_ratio_BB.iloc[0]],[sharpe_ratio_buy_and_hold.iloc[0]]]
 ax3.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
 ax3.axis('tight')
 ax3.axis('off')
 plt.tight_layout()
 plt.show()
-
-
-#Compute Bollinger Band Stretegry
-print(targetdata_MA)
-targetdata_BB_price=targetdata_MA
-print(targetdata_BB_price.to_string())
-BB_trading_pos=[]
-for i in range(251):
-    if (targetdata_MA.iloc[i][0] > upper_bb.iloc[i][0]):
-        BB_trading_pos.append(-1)
-    elif (targetdata_MA.iloc[i][0] < upper_bb.iloc[i][0]):
-        BB_trading_pos.append(1)
-    else:
-        BB_trading_pos.append(0)
-targetdata_BB=targetdata_MA
-targetdata_BB['TSM']=BB_trading_pos
-BB_trading_pos_final=targetdata_BB
-
-print(targetdata_BB_price.to_string())
-
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
-ax1.title.set_text('Trading Timing in 2020')
-ax1.plot(targetdata_BB_price.loc[start_date:end_date, :], label='Price')
-ax1.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
-ax1.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper BB')
-ax1.plot(lower_bb.loc[start_date:end_date, :], label = 'Lower BB')
-ax1.set_ylabel('Stock Price')
-ax1.legend(loc='best')
-ax2.plot(BB_trading_pos_final.loc[start_date:end_date, :], label='Trading position')
-ax2.set_ylabel('Trading position')
-plt.show()
-
-"""
-#Compute Bollinger Band Stretegry
-BB_strategy_realdata_storage=[]
-lower_bb_storage=[]
-upper_bb_storage=[]
-for i in range(len(targetdata_MA)):
-    BB_strategy_realdata_storage.append(targetdata_MA.iloc[i][0])
-    lower_bb_storage.append(lower_bb.iloc[i][0])
-    upper_bb_storage.append(upper_bb.iloc[i][0])
-
-buy_price = []
-sell_price = []
-bb_signal = []
-signal = 0   
-for i in range(len(targetdata_MA)):
-    if BB_strategy_realdata_storage[i-1] > lower_bb_storage[i-1] and BB_strategy_realdata_storage[i] < lower_bb_storage[i]:
-        if signal != 1:
-            buy_price.append(BB_strategy_realdata_storage[i])
-            sell_price.append(np.nan)
-            signal = 1
-            bb_signal.append(signal)
-        else:
-            buy_price.append(np.nan)
-            sell_price.append(np.nan)
-            bb_signal.append(0)
-    elif BB_strategy_realdata_storage[i-1] < upper_bb_storage[i-1] and BB_strategy_realdata_storage[i] > upper_bb_storage[i]:
-        if signal != -1:
-            buy_price.append(np.nan)
-            sell_price.append(BB_strategy_realdata_storage[i])
-            signal = -1
-            bb_signal.append(signal)
-        else:
-            buy_price.append(np.nan)
-            sell_price.append(np.nan)
-            bb_signal.append(0)
-    else:
-        buy_price.append(np.nan)
-        sell_price.append(np.nan)
-        bb_signal.append(0)
-
-
-#Trading Position for BB (MCS)
-position = []
-for i in range(len(targetdata_MA)):
-    if bb_signal[i] > 1:
-        position.append(0)
-    else:
-        position.append(1)
-        
-for i in range(len(targetdata_MA)):
-    if bb_signal[i] == 1:
-        position[i] = 1
-    elif bb_signal[i] == -1:
-        position[i] = 0
-    else:
-        position[i] = position[i-1]
-x=range(1,252) #????????????????????????????????
-plt.plot(x,position)
-plt.show()
-"""
-
 
 
 #Compute the stock logarithmic returns (MCS)
