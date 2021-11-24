@@ -5,6 +5,23 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import norm
 
+def total_trading_cost_2020(data):
+    trading_freq=0
+    short_time=0
+    for i in range(1,251):
+        if(data.iloc[i][0]==-1):
+            short_time+=1
+        if (data.iloc[i][0]!=data.iloc[i-1][0]):
+            trading_freq+=1
+
+    total_trading_cost=(normal_trade_cost*trading_freq)+(short_cost*short_time)
+    print("total_trading_cost:",total_trading_cost)
+    print("trading_freq:",trading_freq)
+    print("short_time:",short_time)
+    print("(normal_trade_cost*trading_freq):",(normal_trade_cost*trading_freq))
+    print("(short_cost*short_time):",(short_cost*short_time))
+
+
 
 
 #Import the stock data
@@ -23,6 +40,13 @@ plt.title("Stock Price from 2009-1-1 to 2019-12-28 ")
 plt.ylabel("Price")
 plt.show()
 """
+
+#Trading Cost
+invest_amount=1000000
+short_rate=0.0025
+trade_rate=0.01
+normal_trade_cost=invest_amount*trade_rate
+short_cost=invest_amount*(short_rate/365)
 
 #Plot for 2020 MA and Bollinger Bands
 start_date = '2020-01-01'
@@ -49,14 +73,21 @@ plt.show()
 """
 
 #Compute and Plot 2020 MA Stretegry
+short_time=0
 trading_positions_raw = targetdata_MA - short_rolling
 trading_positions = trading_positions_raw.apply(np.sign)
 trading_positions_final = trading_positions.shift(1)
 for i in range(20):
     trading_positions_final.iloc[i][0]=0
+
+print("TTcost",total_trading_cost_2020(trading_positions_final))
+
+
+
+
 """
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
-ax1.title.set_text('Trading Timing in 2020')
+ax1.title.set_text('MA Trading Timing in 2020')
 ax1.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
 ax1.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
 ax1.set_ylabel('Stock Price')
@@ -79,11 +110,11 @@ for i in range(251):
 
 targetdata_BB=targetdata_MA.copy(deep=True)
 targetdata_BB['TSM']=BB_trading_pos
-BB_trading_pos_final=targetdata_BB
+BB_trading_pos_final=targetdata_BB.shift(1)
 
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
-ax1.title.set_text('Trading Timing in 2020')
+ax1.title.set_text('BB Trading Timing in 2020')
 ax1.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
 ax1.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
 ax1.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper BB')
