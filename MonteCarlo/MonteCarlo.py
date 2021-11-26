@@ -97,19 +97,19 @@ ax2.set_ylabel('Trading position')
 plt.show()
 """
 
-#Compute Bollinger Band Stretegry
+#Compute Bollinger Band Stretegry 2020
 BB_trading_pos=[]
 
 for i in range(251):
     if (targetdata_MA.iloc[i][0] > upper_bb.iloc[i][0]):
         BB_trading_pos.append(-1)
-    elif (targetdata_MA.iloc[i][0] < upper_bb.iloc[i][0]):
+    elif (targetdata_MA.iloc[i][0] < lower_bb.iloc[i][0]):
         BB_trading_pos.append(1)
     else:
         BB_trading_pos.append(0)
 
 targetdata_BB=targetdata_MA.copy(deep=True)
-targetdata_BB['TSM']=BB_trading_pos
+targetdata_BB[ticker]=BB_trading_pos
 BB_trading_pos_final=targetdata_BB.shift(1)
 
 
@@ -126,7 +126,7 @@ ax2.set_ylabel('Trading position')
 plt.show()
 
 #Compute and Plot log return of 2020 MA/BB/BNH strategy
-risk_free_rate=0.025
+risk_free_rate=0.001
 number_of_years=1
 asset_log_returns = np.log(targetdata_MA).diff()
 strategy_asset_log_returns = trading_positions_final * asset_log_returns
@@ -218,11 +218,11 @@ plt.show()
 """
 
 #Plot for 2020 MA and Bollinger Bands (MCS)
-targetdata_MA_storage_MCS =[]
 for i in range(10000):
+    targetdata_price_storage_MCS =[]
     for j in range(252):
-        targetdata_MA_storage_MCS.append(price_paths[j][i])
-    targetdata_MA_MCS=pd.DataFrame(targetdata_MA_storage_MCS)
+        targetdata_price_storage_MCS.append(price_paths[j][i])
+    targetdata_MA_MCS=pd.DataFrame(targetdata_price_storage_MCS)
     short_rolling_MCS = targetdata_MA_MCS.rolling(window=20).mean()
     long_rolling_MCS = targetdata_MA_MCS.rolling(window=100).mean()
 
@@ -241,7 +241,6 @@ for i in range(10000):
     ax.title.set_text('MA and Bollinger Bands in 2020 using MCS')
     ax.set_ylabel('Price in $')
     plt.show()
-    targetdata_MA_storage_MCS.clear()
     
 
     #Compute and Plot 2020 MA Stretegry (MCS)
@@ -249,9 +248,12 @@ for i in range(10000):
     trading_positions_raw_MCS = targetdata_MA_MCS - short_rolling_MCS 
     trading_positions_MCS = trading_positions_raw_MCS.apply(np.sign)
     trading_positions_final_MCS = trading_positions_MCS.shift(1)
+    for i in range (20):
+        trading_positions_final_MCS[0][i]=0
     for i in range (21,252):
         if (trading_positions_final_MCS[0][i]!=trading_positions_final_MCS[0][i-1]):
             trading_frequency +=1
+    print("MCS trad MA freq",trading_frequency)
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
     ax1.title.set_text('Trading Timing in 2020 using MCS')
     ax1.plot(targetdata_MA_MCS.iloc[:252], label='Price')
@@ -259,6 +261,34 @@ for i in range(10000):
     ax1.set_ylabel('Stock Price')
     ax1.legend(loc='best')
     ax2.plot(trading_positions_final_MCS.iloc[:252], label='Trading position')
+    ax2.set_ylabel('Trading position')
+    plt.show()
+
+  
+    #Compute Bollinger Band Stretegry2020 (MCS)
+    BB_trading_pos_MCS=[]
+    BB_trading_pos_final_MCS=[]
+    for k in range(252):
+        if (targetdata_price_storage_MCS[k] > upper_bb_MCS.iloc[k][0]):
+            BB_trading_pos_MCS.append(-1)
+        elif (targetdata_price_storage_MCS[k] < lower_bb_MCS.iloc[k][0]):
+            BB_trading_pos_MCS.append(1)
+        else:
+            BB_trading_pos_MCS.append(0)
+
+    BB_trading_pos_MCS.roll(1)
+    BB_trading_pos_MCS[0]=BB_trading_pos_MCS[0]*0
+
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
+    ax1.title.set_text('BB Trading Timing in 2020 using MCS')
+    ax1.plot(targetdata_price_storage_MCS[0:252], label='Price')
+    ax1.plot(short_rolling_MCS.iloc[:252], label = '20-days SMA')
+    ax1.plot(upper_bb_MCS.iloc[:252], label = 'Upper BB')
+    ax1.plot(lower_bb_MCS.iloc[:252], label = 'Lower BB')
+    ax1.set_ylabel('Stock Price')
+    ax1.legend(loc='best')
+    ax2.plot(BB_trading_pos_MCS[0:252], label='Trading position')
     ax2.set_ylabel('Trading position')
     plt.show()
     
