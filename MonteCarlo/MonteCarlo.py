@@ -73,23 +73,23 @@ for i in range(251):
 for i in range(20):
     trading_positions_final.iloc[i][0]=0
     Pre_Cost[i]=1000000
-    Trade_Cost[i]=1000
-    Post_Cost[i]=1000000-1000
+    Trade_Cost[i]=10000
+    Post_Cost[i]=1000000-10000
     Return[i]=0
-    Current_Value[i]=1000000-1000
-for i in range(21,251):
+    Current_Value[i]=1000000-10000
+for i in range(20,251):
     if (trading_positions_final.iloc[i][0]!=trading_positions_final.iloc[i-1][0]):
         Pre_Cost[i]=Current_Value[i-1]
         Trade_Cost[i]=Pre_Cost[i]*0.01
         Post_Cost[i]=Pre_Cost[i]-Trade_Cost[i]
         Return[i]=trading_positions_final.iloc[i][0]*np.log(Targetdata_2020_MA.iloc[i][0]/Targetdata_2020_MA.iloc[i-1][0])
-        Current_Value[i]=Post_Cost[i]*Return[i]
+        Current_Value[i]=Post_Cost[i]*(1+Return[i])
     else:
          Pre_Cost[i]=np.nan
          Trade_Cost[i]=np.nan
          Post_Cost[i]=Current_Value[i-1]
          Return[i]=trading_positions_final.iloc[i][0]*np.log(Targetdata_2020_MA.iloc[i][0]/Targetdata_2020_MA.iloc[i-1][0])
-         Current_Value[i]=Post_Cost[i]*Return[i]
+         Current_Value[i]=Post_Cost[i]*(1+Return[i])
 
 Targetdata_2020_MA['Pos']=trading_positions_final
 Targetdata_2020_MA['Pre_Cost']=Pre_Cost
