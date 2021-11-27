@@ -69,14 +69,10 @@ for i in range(251):
     Trade_Cost.append(0)
     Post_Cost.append(0)
     Return.append(0)
-    Current_Value.append(0)
+    Current_Value.append(1000000)
 for i in range(20):
     trading_positions_final.iloc[i][0]=0
-    Pre_Cost[i]=1000000
-    Trade_Cost[i]=10000
-    Post_Cost[i]=1000000-10000
-    Return[i]=0
-    Current_Value[i]=1000000-10000
+
 for i in range(20,251):
     if (trading_positions_final.iloc[i][0]!=trading_positions_final.iloc[i-1][0]):
         Pre_Cost[i]=Current_Value[i-1]
@@ -98,6 +94,15 @@ Targetdata_2020_MA['Post_Cost']=Post_Cost
 Targetdata_2020_MA['Return']=Return
 Targetdata_2020_MA['Current_Value']=Current_Value
 print(Targetdata_2020_MA.to_string())
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
+ax1.title.set_text('MA Reutrn in 2020')
+ax1.plot(Targetdata_2020_MA.loc[start_date:end_date,'Current_Value'], label='Price')
+ax1.set_ylabel('Stock Price')
+ax1.legend(loc='best')
+ax2.plot(trading_positions_final.loc[start_date:end_date, :], label='Trading position')
+ax2.set_ylabel('Trading position')
+plt.show()
 
 
 
