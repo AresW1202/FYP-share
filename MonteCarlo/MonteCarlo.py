@@ -5,31 +5,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import norm
 
-def total_trading_cost_2020(data):
-    trading_freq=0
-    short_time=0
-    for i in range(1,251):
-        if(data.iloc[i][0]==-1):
-            short_time+=1
-        if (data.iloc[i][0]!=data.iloc[i-1][0]):
-            trading_freq+=1
-
-    total_trading_cost=(normal_trade_cost*trading_freq)+(short_cost*short_time)
-    print("total_trading_cost:",total_trading_cost)
-    print("trading_freq:",trading_freq)
-    print("short_time:",short_time)
-    print("(normal_trade_cost*trading_freq):",(normal_trade_cost*trading_freq))
-    print("(short_cost*short_time):",(short_cost*short_time))
-
-
-
 
 #Import the stock data
 ticker = 'TSM'
 targetdata = pd.DataFrame()
 targetdata[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2009-1-1', end = '2019-12-28')['Adj Close']
-targetdata_MA = pd.DataFrame()
-targetdata_MA[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2020-1-1', end = '2020-12-28')['Adj Close']
+Targetdata_2020 = pd.DataFrame()
+Targetdata_2020[ticker] = wb.DataReader(ticker, data_source = 'yahoo', start = '2020-1-1', end = '2020-12-28')['Adj Close']
 
 #Plot stock price 
 targetmean=np.mean(targetdata)
@@ -52,16 +34,16 @@ short_cost=invest_amount*(short_rate/365)
 start_date = '2020-01-01'
 end_date = '2020-12-28'
 
-short_rolling = targetdata_MA.rolling(window=20).mean()
-long_rolling = targetdata_MA.rolling(window=100).mean()
+short_rolling = Targetdata_2020.rolling(window=20).mean()
+long_rolling = Targetdata_2020.rolling(window=100).mean()
 
-targetdata_MA_std = targetdata_MA.rolling(window = 20).std()
-upper_bb = short_rolling + targetdata_MA_std * 2
-lower_bb = short_rolling - targetdata_MA_std * 2
+Targetdata_2020_std = Targetdata_2020.rolling(window = 20).std()
+upper_bb = short_rolling + Targetdata_2020_std * 2
+lower_bb = short_rolling - Targetdata_2020_std * 2
 
 """
 fig, ax = plt.subplots(figsize=(16,9))
-ax.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
+ax.plot(Targetdata_2020.loc[start_date:end_date, :], label='Price')
 ax.plot(long_rolling.loc[start_date:end_date, :], label = '100-days SMA')
 ax.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
 ax.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper Bollinger Bands',linestyle='dashed')
@@ -73,22 +55,56 @@ plt.show()
 """
 
 #Compute and Plot 2020 MA Stretegry
-short_time=0
-trading_positions_raw = targetdata_MA - short_rolling
+Pre_Cost=[]
+Trade_Cost=[]
+Post_Cost=[]
+Return=[]
+Current_Value=[]
+Targetdata_2020_MA=Targetdata_2020.copy(deep=True)
+trading_positions_raw = Targetdata_2020 - short_rolling
 trading_positions = trading_positions_raw.apply(np.sign)
 trading_positions_final = trading_positions.shift(1)
+for i in range(251):
+    Pre_Cost.append(0)
+    Trade_Cost.append(0)
+    Post_Cost.append(0)
+    Return.append(0)
+    Current_Value.append(0)
 for i in range(20):
     trading_positions_final.iloc[i][0]=0
+    Pre_Cost[i]=1000000
+    Trade_Cost[i]=1000
+    Post_Cost[i]=1000000-1000
+    Return[i]=0
+    Current_Value[i]=1000000-1000
+for i in range(21,251):
+    if (trading_positions_final.iloc[i][0]!=trading_positions_final.iloc[i-1][0]):
+        Pre_Cost[i]=Current_Value[i-1]
+        Trade_Cost[i]=Pre_Cost[i]*0.01
+        Post_Cost[i]=Pre_Cost[i]-Trade_Cost[i]
+        Return[i]=trading_positions_final.iloc[i][0]*np.log(Targetdata_2020_MA.iloc[i][0]/Targetdata_2020_MA.iloc[i-1][0])
+        Current_Value[i]=Post_Cost[i]*Return[i]
+    else:
+         Pre_Cost[i]=np.nan
+         Trade_Cost[i]=np.nan
+         Post_Cost[i]=Current_Value[i-1]
+         Return[i]=trading_positions_final.iloc[i][0]*np.log(Targetdata_2020_MA.iloc[i][0]/Targetdata_2020_MA.iloc[i-1][0])
+         Current_Value[i]=Post_Cost[i]*Return[i]
 
-print("TTcost",total_trading_cost_2020(trading_positions_final))
-
+Targetdata_2020_MA['Pos']=trading_positions_final
+Targetdata_2020_MA['Pre_Cost']=Pre_Cost
+Targetdata_2020_MA['Trade_Cost']=Trade_Cost
+Targetdata_2020_MA['Post_Cost']=Post_Cost
+Targetdata_2020_MA['Return']=Return
+Targetdata_2020_MA['Current_Value']=Current_Value
+print(Targetdata_2020_MA.to_string())
 
 
 
 """
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
 ax1.title.set_text('MA Trading Timing in 2020')
-ax1.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
+ax1.plot(Targetdata_2020.loc[start_date:end_date, :], label='Price')
 ax1.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
 ax1.set_ylabel('Stock Price')
 ax1.legend(loc='best')
@@ -101,21 +117,21 @@ plt.show()
 BB_trading_pos=[]
 
 for i in range(251):
-    if (targetdata_MA.iloc[i][0] > upper_bb.iloc[i][0]):
+    if (Targetdata_2020.iloc[i][0] > upper_bb.iloc[i][0]):
         BB_trading_pos.append(-1)
-    elif (targetdata_MA.iloc[i][0] < lower_bb.iloc[i][0]):
+    elif (Targetdata_2020.iloc[i][0] < lower_bb.iloc[i][0]):
         BB_trading_pos.append(1)
     else:
         BB_trading_pos.append(0)
 
-targetdata_BB=targetdata_MA.copy(deep=True)
+targetdata_BB=Targetdata_2020.copy(deep=True)
 targetdata_BB[ticker]=BB_trading_pos
 BB_trading_pos_final=targetdata_BB.shift(1)
 
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
 ax1.title.set_text('BB Trading Timing in 2020')
-ax1.plot(targetdata_MA.loc[start_date:end_date, :], label='Price')
+ax1.plot(Targetdata_2020.loc[start_date:end_date, :], label='Price')
 ax1.plot(short_rolling.loc[start_date:end_date, :], label = '20-days SMA')
 ax1.plot(upper_bb.loc[start_date:end_date, :], label = 'Upper BB')
 ax1.plot(lower_bb.loc[start_date:end_date, :], label = 'Lower BB')
@@ -128,14 +144,14 @@ plt.show()
 #Compute and Plot log return of 2020 MA/BB/BNH strategy
 risk_free_rate=0.001
 number_of_years=1
-asset_log_returns = np.log(targetdata_MA).diff()
+asset_log_returns = np.log(Targetdata_2020).diff()
 strategy_asset_log_returns = trading_positions_final * asset_log_returns
 cum_strategy_asset_log_returns = strategy_asset_log_returns.cumsum()
 last_value_cum_strategy_asset_log_returns=strategy_asset_log_returns.sum()
 MA_average_yearly_return = (1 + last_value_cum_strategy_asset_log_returns)**(1/number_of_years) - 1
 sharpe_ratio_MA= (MA_average_yearly_return-risk_free_rate)/cum_strategy_asset_log_returns.std(0)
 
-buy_and_hold=pd.DataFrame(1, index = targetdata_MA.index, columns=targetdata_MA.columns)
+buy_and_hold=pd.DataFrame(1, index = Targetdata_2020.index, columns=Targetdata_2020.columns)
 buy_and_hold_log_returns=buy_and_hold * asset_log_returns
 cum_buy_and_hold_log_returns = buy_and_hold_log_returns.cumsum()
 last_value_cum_buy_and_hold_log_returnss=buy_and_hold_log_returns.sum()
@@ -222,17 +238,17 @@ for i in range(10000):
     targetdata_price_storage_MCS =[]
     for j in range(252):
         targetdata_price_storage_MCS.append(price_paths[j][i])
-    targetdata_MA_MCS=pd.DataFrame(targetdata_price_storage_MCS)
-    short_rolling_MCS = targetdata_MA_MCS.rolling(window=20).mean()
-    long_rolling_MCS = targetdata_MA_MCS.rolling(window=100).mean()
+    Targetdata_2020_MCS=pd.DataFrame(targetdata_price_storage_MCS)
+    short_rolling_MCS = Targetdata_2020_MCS.rolling(window=20).mean()
+    long_rolling_MCS = Targetdata_2020_MCS.rolling(window=100).mean()
 
-    targetdata_std_MCS = targetdata_MA_MCS.rolling(window = 20).std()
+    targetdata_std_MCS = Targetdata_2020_MCS.rolling(window = 20).std()
     upper_bb_MCS = short_rolling_MCS + targetdata_std_MCS * 2
     lower_bb_MCS = short_rolling_MCS - targetdata_std_MCS * 2
 
     
     fig, ax = plt.subplots(figsize=(16,9))
-    ax.plot(targetdata_MA_MCS.iloc[:252], label='Price')
+    ax.plot(Targetdata_2020_MCS.iloc[:252], label='Price')
     ax.plot(long_rolling_MCS.iloc[:252], label = '100-days SMA')
     ax.plot(short_rolling_MCS.iloc[:252], label = '20-days SMA')
     ax.plot(upper_bb_MCS.iloc[:252], label = 'Upper Bollinger Bands',linestyle='dashed')
@@ -245,7 +261,7 @@ for i in range(10000):
 
     #Compute and Plot 2020 MA Stretegry (MCS)
     trading_frequency=0
-    trading_positions_raw_MCS = targetdata_MA_MCS - short_rolling_MCS 
+    trading_positions_raw_MCS = Targetdata_2020_MCS - short_rolling_MCS 
     trading_positions_MCS = trading_positions_raw_MCS.apply(np.sign)
     trading_positions_final_MCS = trading_positions_MCS.shift(1)
     for i in range (20):
@@ -256,7 +272,7 @@ for i in range(10000):
     print("MCS trad MA freq",trading_frequency)
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
     ax1.title.set_text('Trading Timing in 2020 using MCS')
-    ax1.plot(targetdata_MA_MCS.iloc[:252], label='Price')
+    ax1.plot(Targetdata_2020_MCS.iloc[:252], label='Price')
     ax1.plot(short_rolling_MCS.loc[:252], label = '20-days SMA')
     ax1.set_ylabel('Stock Price')
     ax1.legend(loc='best')
@@ -294,13 +310,13 @@ for i in range(10000):
     
     #Compute and Plot log return of 2020 MA strategy (MCS)
     number_of_years=1
-    asset_log_returns_MCS = np.log(targetdata_MA_MCS).diff()
+    asset_log_returns_MCS = np.log(Targetdata_2020_MCS).diff()
     strategy_asset_log_returns_MCS = trading_positions_final_MCS * asset_log_returns_MCS
     cum_strategy_asset_log_returns_MCS = strategy_asset_log_returns_MCS.cumsum()
     last_value_cum_strategy_asset_log_returns_MCS=strategy_asset_log_returns_MCS.sum()
     MA_average_yearly_return_MCS = (1 + last_value_cum_strategy_asset_log_returns_MCS)**(1/number_of_years) - 1
 
-    buy_and_hold_MCS=pd.DataFrame(1, index = targetdata_MA_MCS.index, columns=targetdata_MA_MCS.columns)
+    buy_and_hold_MCS=pd.DataFrame(1, index = Targetdata_2020_MCS.index, columns=Targetdata_2020_MCS.columns)
     buy_and_hold_log_returns_MCS=buy_and_hold_MCS * asset_log_returns_MCS
     cum_buy_and_hold_log_returns_MCS = buy_and_hold_log_returns_MCS.cumsum()
     last_value_cum_buy_and_hold_log_returnss_MCS=buy_and_hold_log_returns_MCS.sum()
