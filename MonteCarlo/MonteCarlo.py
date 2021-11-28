@@ -5,6 +5,54 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import norm
 
+def log_return_after_cost_2020(data,pos):
+    Pre_Cost=[]
+    Trade_Cost=[]
+    Post_Cost=[]
+    Return=[]
+    Current_Value=[]
+    for i in range(251):
+        Pre_Cost.append(0)
+        Trade_Cost.append(0)
+        Post_Cost.append(0)
+        Return.append(0)
+        Current_Value.append(1000000)
+    for i in range(20):
+        pos[i]=0
+
+    for i in range(20,251):
+        if(pos[i]!=pos[i-1] and pos[i]==-1):
+            Pre_Cost[i]=Current_Value[i-1]
+            Trade_Cost[i]=Pre_Cost[i]*0.0025/365+Pre_Cost[i]*0.01
+            Post_Cost[i]=Pre_Cost[i]-Trade_Cost[i]
+            Return[i]=pos[i]*np.log(data.iloc[i][0]/data.iloc[i-1][0])
+            Current_Value[i]=Post_Cost[i]*(1+Return[i])
+        elif (pos[i]!=pos[i-1]):
+            Pre_Cost[i]=Current_Value[i-1]
+            Trade_Cost[i]=Pre_Cost[i]*0.01
+            Post_Cost[i]=Pre_Cost[i]-Trade_Cost[i]
+            Return[i]=pos[i]*np.log(data.iloc[i][0]/data.iloc[i-1][0])
+            Current_Value[i]=Post_Cost[i]*(1+Return[i])
+        elif (pos[i]==-1):
+            Pre_Cost[i]=Current_Value[i-1]
+            Trade_Cost[i]=Pre_Cost[i]*0.0025/365
+            Post_Cost[i]=Pre_Cost[i]-Trade_Cost[i]
+            Return[i]=pos[i]*np.log(data.iloc[i][0]/data.iloc[i-1][0])
+            Current_Value[i]=Post_Cost[i]*(1+Return[i])
+        else:
+             Pre_Cost[i]=np.nan
+             Trade_Cost[i]=np.nan
+             Post_Cost[i]=Current_Value[i-1]
+             Return[i]=pos[i]*np.log(data.iloc[i][0]/data.iloc[i-1][0])
+             Current_Value[i]=Post_Cost[i]*(1+Return[i])
+
+    data['Pos']=pos
+    data['Pre_Cost']=Pre_Cost
+    data['Trade_Cost']=Trade_Cost
+    data['Post_Cost']=Post_Cost
+    data['Return']=Return
+    data['Current_Value']=Current_Value
+
 
 #Import the stock data
 ticker = 'TSM'
@@ -23,12 +71,6 @@ plt.ylabel("Price")
 plt.show()
 """
 
-#Trading Cost
-invest_amount=1000000
-short_rate=0.0025
-trade_rate=0.01
-normal_trade_cost=invest_amount*trade_rate
-short_cost=invest_amount*(short_rate/365)
 
 #Plot for 2020 MA and Bollinger Bands
 start_date = '2020-01-01'
@@ -55,56 +97,24 @@ plt.show()
 """
 
 #Compute and Plot 2020 MA Stretegry
-Pre_Cost=[]
-Trade_Cost=[]
-Post_Cost=[]
-Return=[]
-Current_Value=[]
 Targetdata_2020_MA=Targetdata_2020.copy(deep=True)
 trading_positions_raw = Targetdata_2020 - short_rolling
 trading_positions = trading_positions_raw.apply(np.sign)
 trading_positions_final = trading_positions.shift(1)
+trading_positions_final_idx=[]
 for i in range(251):
-    Pre_Cost.append(0)
-    Trade_Cost.append(0)
-    Post_Cost.append(0)
-    Return.append(0)
-    Current_Value.append(1000000)
-for i in range(20):
-    trading_positions_final.iloc[i][0]=0
+    trading_positions_final_idx.append(trading_positions_final.iloc[i][0])
+log_return_after_cost_2020(Targetdata_2020_MA,trading_positions_final_idx)
 
-for i in range(20,251):
-    if (trading_positions_final.iloc[i][0]!=trading_positions_final.iloc[i-1][0]):
-        Pre_Cost[i]=Current_Value[i-1]
-        Trade_Cost[i]=Pre_Cost[i]*0.01
-        Post_Cost[i]=Pre_Cost[i]-Trade_Cost[i]
-        Return[i]=trading_positions_final.iloc[i][0]*np.log(Targetdata_2020_MA.iloc[i][0]/Targetdata_2020_MA.iloc[i-1][0])
-        Current_Value[i]=Post_Cost[i]*(1+Return[i])
-    else:
-         Pre_Cost[i]=np.nan
-         Trade_Cost[i]=np.nan
-         Post_Cost[i]=Current_Value[i-1]
-         Return[i]=trading_positions_final.iloc[i][0]*np.log(Targetdata_2020_MA.iloc[i][0]/Targetdata_2020_MA.iloc[i-1][0])
-         Current_Value[i]=Post_Cost[i]*(1+Return[i])
-
-Targetdata_2020_MA['Pos']=trading_positions_final
-Targetdata_2020_MA['Pre_Cost']=Pre_Cost
-Targetdata_2020_MA['Trade_Cost']=Trade_Cost
-Targetdata_2020_MA['Post_Cost']=Post_Cost
-Targetdata_2020_MA['Return']=Return
-Targetdata_2020_MA['Current_Value']=Current_Value
-print(Targetdata_2020_MA.to_string())
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
-ax1.title.set_text('MA Reutrn in 2020')
-ax1.plot(Targetdata_2020_MA.loc[start_date:end_date,'Current_Value'], label='Price')
+ax1.title.set_text('MA log in 2020')
+ax1.plot(Targetdata_2020_MA.loc[start_date:end_date, 'Current_Value'], label='Price')
 ax1.set_ylabel('Stock Price')
 ax1.legend(loc='best')
 ax2.plot(trading_positions_final.loc[start_date:end_date, :], label='Trading position')
 ax2.set_ylabel('Trading position')
 plt.show()
-
-
 
 """
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
@@ -120,19 +130,36 @@ plt.show()
 
 #Compute Bollinger Band Stretegry 2020
 BB_trading_pos=[]
-
-for i in range(251):
+for i in range(20):
+    BB_trading_pos.append(0)
+for i in range(20,251):
     if (Targetdata_2020.iloc[i][0] > upper_bb.iloc[i][0]):
         BB_trading_pos.append(-1)
     elif (Targetdata_2020.iloc[i][0] < lower_bb.iloc[i][0]):
         BB_trading_pos.append(1)
     else:
-        BB_trading_pos.append(0)
+        BB_trading_pos.append(BB_trading_pos[i-1])
 
-targetdata_BB=Targetdata_2020.copy(deep=True)
-targetdata_BB[ticker]=BB_trading_pos
-BB_trading_pos_final=targetdata_BB.shift(1)
+targetdata_2020_BB=Targetdata_2020.copy(deep=True)
+targetdata_2020_BB_dump_df=Targetdata_2020.copy(deep=True)
+targetdata_2020_BB_dump_df[ticker]=BB_trading_pos
+BB_trading_pos_final=targetdata_2020_BB_dump_df.shift(1)
+BB_trading_pos_final_idx=[]
+for i in range(251):
+    BB_trading_pos_final_idx.append(BB_trading_pos_final.iloc[i][0])
+log_return_after_cost_2020(targetdata_2020_BB,BB_trading_pos_final_idx)
+print(BB_trading_pos_final_idx)
+print(targetdata_2020_BB.to_string())
 
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
+ax1.title.set_text('MA log in 2020')
+ax1.plot(targetdata_2020_BB.loc[start_date:end_date, 'Current_Value'], label='Price')
+ax1.set_ylabel('Stock Price')
+ax1.legend(loc='best')
+ax2.plot(targetdata_2020_BB_dump_df.loc[start_date:end_date, :], label='Trading position')
+ax2.set_ylabel('Trading position')
+plt.show()
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
 ax1.title.set_text('BB Trading Timing in 2020')
