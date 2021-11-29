@@ -113,7 +113,7 @@ for i in range(251):
     trading_positions_final_idx.append(trading_positions_final.iloc[i][0])
 log_return_after_cost_2020(Targetdata_2020_MA,trading_positions_final_idx)
 
-"""
+
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
 ax1.title.set_text('MA Trading Timing in 2020')
 ax1.plot(Targetdata_2020.loc[start_date:end_date, :], label='Price')
@@ -123,7 +123,7 @@ ax1.legend(loc='best')
 ax2.plot(trading_positions_final.loc[start_date:end_date, :], label='Trading position')
 ax2.set_ylabel('Trading position')
 plt.show()
-"""
+
 
 #Compute Bollinger Band Stretegry 2020
 BB_trading_pos=[]
@@ -147,7 +147,7 @@ for i in range(251):
     BB_trading_pos_final_idx.append(BB_trading_pos_final.iloc[i][0])
 log_return_after_cost_2020(Targetdata_2020_BB,BB_trading_pos_final_idx)
 
-"""
+
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
 ax1.title.set_text('BB Trading Timing in 2020')
 ax1.plot(Targetdata_2020.loc[start_date:end_date, :], label='Price')
@@ -159,7 +159,7 @@ ax1.legend(loc='best')
 ax2.plot(BB_trading_pos_final.loc[start_date:end_date, :], label='Trading position')
 ax2.set_ylabel('Trading position')
 plt.show()
-"""
+
 
 #Compute and Plot log return pre cost of 2020 MA/BB/BNH strategy
 risk_free_rate=0.001
@@ -214,6 +214,7 @@ ax3.axis('off')
 plt.tight_layout()
 plt.show()
 
+
 #Compute and Plot log return post cost of 2020 MA/BB/BNH strategy
 Targetdata_2020_BNH=cum_buy_and_hold_log_returns.copy(deep=True)
 Targetdata_2020_BNH=(1+Targetdata_2020_BNH)*1000000
@@ -247,9 +248,9 @@ ax3 = plt.subplot2grid(shape=(8, 5), loc=(6, 2), rowspan=1)
 column_labels=["Sharpe Ratio"]
 row_labels=["20MA","BB","Buy and Hold"]
 ax3.title.set_text('Sharpe Ratio of different strategy in 2020')
-data=[[Sharpe_ratio(Targetdata_2020_MA_year_return,Targetdata_2020_MA['Current_Value'])],
-      [Sharpe_ratio(Targetdata_2020_BB_year_return,Targetdata_2020_BB['Current_Value'])],
-      [Sharpe_ratio(Targetdata_2020_BNH_year_return,Targetdata_2020_BNH.iloc[:,0])]]
+data=[[Sharpe_ratio((Targetdata_2020_MA.iloc[-1][6]-Targetdata_2020_MA.iloc[0][6]),Targetdata_2020_MA['Current_Value'])],
+      [Sharpe_ratio((Targetdata_2020_BB.iloc[-1][6]-Targetdata_2020_BB.iloc[0][6]),Targetdata_2020_BB['Current_Value'])],
+      [Sharpe_ratio((Targetdata_2020_BNH.iloc[-1][0]-Targetdata_2020_BNH.iloc[1][0]),Targetdata_2020_BNH.iloc[:,0])]]
 ax3.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
 ax3.axis('tight')
 ax3.axis('off')
@@ -275,8 +276,8 @@ drift = u - (0.5*var)
 #Compute the Variance and Daily Returns (MCS)
 stdev = log_returns.std()
 days = 251
-trials = 1000
-Z = norm.ppf(np.random.rand(days, trials)) #days, trials
+trials = 10000
+Z = norm.ppf(np.random.rand(days, trials))
 daily_returns = np.exp(drift.values + stdev.values * Z)
 
 #Calculating the stock price for every trial (MCS)
@@ -312,18 +313,17 @@ for i in range(10000):
     upper_bb_MCS = short_rolling_MCS + targetdata_std_MCS * 2
     lower_bb_MCS = short_rolling_MCS - targetdata_std_MCS * 2
 
-    """
+    
     fig, ax = plt.subplots(figsize=(16,9))
     ax.plot(Targetdata_2020_MCS.iloc[:251], label='Price')
-    ax.plot(long_rolling_MCS.iloc[:251], label = '100-days SMA')
     ax.plot(short_rolling_MCS.iloc[:251], label = '20-days SMA')
     ax.plot(upper_bb_MCS.iloc[:251], label = 'Upper Bollinger Bands',linestyle='dashed')
     ax.plot(lower_bb_MCS.iloc[:251], label = 'Lower Bollinger Bands',linestyle='dashed')
     ax.legend(loc='best')
     ax.title.set_text('MA and Bollinger Bands in 2020 using MCS')
-    ax.set_ylabel('Price in $')
+    ax.set_ylabel('Stock Price')
     plt.show()
-    """
+    
 
     #Compute and Plot 2020 MA Stretegry (MCS)
     Targetdata_2020_MA_MCS=Targetdata_2020_MCS.copy(deep=True)
@@ -336,8 +336,7 @@ for i in range(10000):
     for i in range(251):
         trading_positions_final_idx.append(trading_positions_final.iloc[i][0])
     log_return_after_cost_2020(Targetdata_2020_MA_MCS,trading_positions_final_idx)
-
-    """
+    
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
     ax1.title.set_text('MA Trading Timing using MCS in 2020')
     ax1.plot(Targetdata_2020_MCS.loc[start_date:end_date, :], label='Price')
@@ -347,7 +346,7 @@ for i in range(10000):
     ax2.plot(trading_positions_final.loc[start_date:end_date, :], label='Trading position')
     ax2.set_ylabel('Trading position')
     plt.show()
-    """
+    
 
   
     #Compute Bollinger Band Stretegry2020 (MCS)
@@ -372,7 +371,7 @@ for i in range(10000):
         BB_trading_pos_final_idx.append(BB_trading_pos_final_MCS.iloc[i][0])
     log_return_after_cost_2020(Targetdata_2020_BB_MCS,BB_trading_pos_final_idx)
 
-    """
+    
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16,9))
     ax1.title.set_text('BB Trading Timing using MCS in 2020')
     ax1.plot(Targetdata_2020_MCS.loc[start_date:end_date, :], label='Price')
@@ -384,7 +383,7 @@ for i in range(10000):
     ax2.plot(BB_trading_pos_final_MCS.loc[start_date:end_date, :], label='Trading position')
     ax2.set_ylabel('Trading position')
     plt.show()
-    """
+    
 
     #Compute and Plot log return pre cost of 2020 MA/BB/BNH strategy
     risk_free_rate=0.001
@@ -399,7 +398,7 @@ for i in range(10000):
     buy_and_hold_MCS=pd.DataFrame(1, index = Targetdata_2020_MCS.index, columns=Targetdata_2020_MCS.columns)
     buy_and_hold_log_returns=buy_and_hold_MCS * asset_log_returns
     cum_buy_and_hold_log_returns = buy_and_hold_log_returns.cumsum()
-    last_value_cum_buy_and_hold_log_returnss=buy_and_hold_log_returns.sum()
+    last_value_cum_buy_and_hold_log_returnss=cum_buy_and_hold_log_returns.iloc[-1][0]-cum_buy_and_hold_log_returns.iloc[1][0]
     buy_and_hold_average_yearly_return = (1 + last_value_cum_buy_and_hold_log_returnss)**(1/number_of_years) - 1
     sharpe_ratio_buy_and_hold= (buy_and_hold_average_yearly_return-risk_free_rate)/cum_buy_and_hold_log_returns.std(0)
 
@@ -408,8 +407,8 @@ for i in range(10000):
     last_value_cum_BB_log_returnss=BB_log_returns.sum()
     BB_average_yearly_return = (1 + last_value_cum_BB_log_returnss)**(1/number_of_years) - 1
     sharpe_ratio_BB= (BB_average_yearly_return-risk_free_rate)/cum_BB_log_returns.std(0)
-
-    """
+    
+    
     fig = plt.figure(figsize=(16,9))
     ax1 = plt.subplot2grid(shape=(16, 9), loc=(0, 0), rowspan=9,colspan=16)
     ax1.plot(cum_strategy_asset_log_returns.loc[start_date:end_date, :], label='MA strategy')
@@ -422,34 +421,35 @@ for i in range(10000):
     ax2 = plt.subplot2grid(shape=(8, 5), loc=(6, 0), rowspan=1)
     column_labels=["Yearly Return"]
     row_labels=["20MA","BB","Buy and Hold"]
-    ax2.title.set_text('Yearly return of different strategy in 2020 (%)')
-    data=[[100*np.float(MA_average_yearly_return.iloc[0])],[100*np.float(BB_average_yearly_return.iloc[0])],[100*np.float(buy_and_hold_average_yearly_return.iloc[0])]]
+    ax2.title.set_text('Yearly return of different strategy using MCS without Trading cost in 2020 (%)')
+    data=[[100*np.float(MA_average_yearly_return.iloc[0])],[100*np.float(BB_average_yearly_return.iloc[0])],[100*np.float(buy_and_hold_average_yearly_return)]]
     ax2.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
     ax2.axis('tight')
     ax2.axis('off')
 
-    ax3 = plt.subplot2grid(shape=(8, 5), loc=(6, 2), rowspan=1)
+    ax3 = plt.subplot2grid(shape=(8, 5), loc=(6, 3), rowspan=1)
     column_labels=["Sharpe Ratio"]
     row_labels=["20MA","BB","Buy and Hold"]
-    ax3.title.set_text('Sharpe Ratio of different strategy in 2020')
+    ax3.title.set_text('Sharpe Ratio of different strategy using MCS without Trading cost in 2020')
     data=[[sharpe_ratio_MA.iloc[0]],[sharpe_ratio_BB.iloc[0]],[sharpe_ratio_buy_and_hold.iloc[0]]]
     ax3.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
     ax3.axis('tight')
     ax3.axis('off')
     plt.tight_layout()
     plt.show()
-    """
+    
 
     #Compute and Plot log return post cost of 2020 MA/BB/BNH strategy
     Targetdata_2020_BNH_MCS=cum_buy_and_hold_log_returns.copy(deep=True)
     Targetdata_2020_BNH_MCS=(1+Targetdata_2020_BNH_MCS)*1000000
-    Targetdata_2020_BNH_MCS.iloc[1][0]=1000000
+    Targetdata_2020_BNH_MCS.iloc[1][0]=1001000
 
     Targetdata_2020_MA_year_return=(Targetdata_2020_MA_MCS.iloc[-1][6]/Targetdata_2020_MA_MCS.iloc[0][6])-1
     Targetdata_2020_BB_year_return=(Targetdata_2020_BB_MCS.iloc[-1][6]/Targetdata_2020_BB_MCS.iloc[0][6])-1
     Targetdata_2020_BNH_year_return=(Targetdata_2020_BNH_MCS.iloc[-1][0]/Targetdata_2020_BNH_MCS.iloc[1][0])-1
+ 
 
-    """
+    
     fig = plt.figure(figsize=(16,9))
     ax1 = plt.subplot2grid(shape=(16, 9), loc=(0, 0), rowspan=9,colspan=16)
     ax1.plot(Targetdata_2020_MA_MCS.loc[start_date:end_date,'Current_Value' :], label='MA strategy')
@@ -462,7 +462,7 @@ for i in range(10000):
     ax2 = plt.subplot2grid(shape=(8, 5), loc=(6, 0), rowspan=1)
     column_labels=["Yearly Return"]
     row_labels=["20MA","BB","Buy and Hold"]
-    ax2.title.set_text('Yearly return of different strategy in 2020 With Trading Cost (%)')
+    ax2.title.set_text('Yearly return of different strategy using MCS With Trading Cost in 2020  (%)')
     data=[[100*np.float(Targetdata_2020_MA_year_return)],
           [100*np.float(Targetdata_2020_BB_year_return)],
           [100*np.float(Targetdata_2020_BNH_year_return)]]
@@ -473,16 +473,16 @@ for i in range(10000):
     ax3 = plt.subplot2grid(shape=(8, 5), loc=(6, 2), rowspan=1)
     column_labels=["Sharpe Ratio"]
     row_labels=["20MA","BB","Buy and Hold"]
-    ax3.title.set_text('Sharpe Ratio of different strategy in 2020')
-    data=[[Sharpe_ratio(Targetdata_2020_MA_year_return,Targetdata_2020_MA_MCS['Current_Value'])],
-          [Sharpe_ratio(Targetdata_2020_BB_year_return,Targetdata_2020_BB_MCS['Current_Value'])],
-          [Sharpe_ratio(Targetdata_2020_BNH_year_return,Targetdata_2020_BNH_MCS.iloc[:,0])]]
+    ax3.title.set_text('Sharpe Ratio of different strategy using MCS with Trading Cost in 2020')
+    data=[[Sharpe_ratio((Targetdata_2020_MA_MCS.iloc[-1][6]-Targetdata_2020_MA_MCS.iloc[0][6]),Targetdata_2020_MA_MCS['Current_Value'])],
+          [Sharpe_ratio((Targetdata_2020_BB_MCS.iloc[-1][6]-Targetdata_2020_BB_MCS.iloc[0][6]),Targetdata_2020_BB_MCS['Current_Value'])],
+          [Sharpe_ratio((Targetdata_2020_BNH_MCS.iloc[-1][0]-Targetdata_2020_BNH_MCS.iloc[1][0]),Targetdata_2020_BNH_MCS.iloc[:,0])]]
     ax3.table(cellText=data,colLabels=column_labels,rowLabels=row_labels,loc='center')
     ax3.axis('tight')
     ax3.axis('off')
     plt.tight_layout()
     plt.show()
-    """
+    
 
     
     Each_trial_post_cost_MA_return.append(Targetdata_2020_MA_year_return)
