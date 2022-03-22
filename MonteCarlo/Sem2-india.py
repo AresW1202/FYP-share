@@ -29,8 +29,8 @@ def GBMsimulator(seed, So, mu, sigma, Cov, T, N):
 import pandas_datareader as pdr
 from datetime import datetime
 
-intc = pdr.get_data_yahoo(symbols='INTC', start=datetime(2018, 1, 1), end=datetime(2020, 1, 1))
-amd = pdr.get_data_yahoo(symbols='AMD', start=datetime(2018, 1, 1), end=datetime(2020, 1, 1))
+coca = pdr.get_data_yahoo(symbols='KO', start=datetime(2018, 1, 1), end=datetime(2020, 1, 1))
+pep = pdr.get_data_yahoo(symbols='PEP', start=datetime(2018, 1, 1), end=datetime(2020, 1, 1))
 
 #Visualize the closing price history
 import matplotlib.pyplot as plt
