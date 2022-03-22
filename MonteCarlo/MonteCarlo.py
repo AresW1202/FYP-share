@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import norm
 
+123132
 def log_return_after_cost_2020(data,pos):
     Pre_Cost=[]
     Trade_Cost=[]
