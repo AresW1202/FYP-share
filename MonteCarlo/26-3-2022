@@ -1,5 +1,9 @@
 # Asset Path
 import numpy as np
+import pandas as pd
+import yfinance as yf
+import pandas_datareader as pdr
+from datetime import datetime
 
 def GBMsimulator(seed, So, mu, sigma, Cov, T, N):
     """
@@ -26,8 +30,33 @@ def GBMsimulator(seed, So, mu, sigma, Cov, T, N):
         S[:, i] = S[:, i-1]*np.exp(drift + diffusion)
     return S, t
   
-import pandas_datareader as pdr
-from datetime import datetime
+
+#get-data
+def get_historical_Data(tickers):
+    """This function returns a pd dataframe with all of the adjusted closing information"""
+    data = pd.DataFrame()
+    names = list()
+    for i in tickers:
+        data = pd.concat([data, pd.DataFrame(yf.download(i, start=datetime(2018, 1, 1), end=datetime(2020, 1, 1)).iloc[:,4])], axis = 1)
+        names.append(i)
+    data.columns = names
+    return data
+
+ticks = ["KO", "AAPL", "GOOG", "AMD", "PEP", "SPY", "NFLX", "BA", "WMT","TWTR","GS","XOM","NKE","FEYE", "FB","BRK-B", "MSFT"] #Name of company (Dominos pizza)
+d = get_historical_Data(ticks)
+print(d.shape)
+# Most Recent Data
+d.tail()
+corr_matrix = d.corr()
+corr_matrix
+# Let's heatmap this matrix so that we can have a better sense of what is going on
+import seaborn as sn
+from matplotlib.pyplot import figure
+figure(figsize=(8, 6), dpi=200)
+sn.heatmap(corr_matrix, annot = True)
+
+
+
 
 ko = pdr.get_data_yahoo(symbols='KO', start=datetime(2018, 1, 1), end=datetime(2020, 1, 1))
 pep = pdr.get_data_yahoo(symbols='PEP', start=datetime(2018, 1, 1), end=datetime(2020, 1, 1))
@@ -97,6 +126,7 @@ plt.show()
 # Check out the cointegration value: Null hyp. = no cointegration
 import statsmodels.tsa.stattools as ts 
 result = ts.coint(stocks[0,:], stocks[1,:])
+print(result)
 
 # Cointegration test: A technique used to find a potential correlation in a time series (long term)
 # Determines if the spread between the two assets are constant over time.
@@ -113,6 +143,7 @@ from statsmodels.tsa.stattools import adfuller
 # With all time series, you want to have stationary data otherwise our data will be very hard to predict.
 # ADF for Berkshire Hathaway Class B
 BRK_B_ADF = adfuller(stocks[0,:])
+print(BRK_B_ADF)
 print('P value for the Augmented Dickey-Fuller Test is', BRK_B_ADF[1])
 MSFT_ADF = adfuller(stocks[1,:])
 print('P value for the Augmented Dickey-Fuller Test is', MSFT_ADF[1])
